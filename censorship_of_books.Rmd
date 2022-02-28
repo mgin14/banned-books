@@ -1,0 +1,154 @@
+---
+title: "Censorship of Children to Young-Adult Books in the United States from 2010-2019"
+author: "Melanie Gin"
+date: "12/16/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+# load libraries
+library(tidyverse)
+library(knitr)
+library(tidytext)
+knitr::opts_chunk$set(echo = FALSE )
+
+# read data in
+challenged_books <- read_csv("bb_main_data.csv")
+```
+# Introduction
+
+Since the early 1970s books have been challenged (i.e. an official complaint submitted to permanently remove or relocate/re-catalog a book) in public libraries and schools, especially books aimed at children to teens/young-adults (i.e. ages 2-17). There are guidelines schools and libraries have to follow in order to remove or keep a book. Some schools have complied to complaints by banning books from being taught or be available in the library/classrooms and/or putting conditions on them so only older students can check the books out. A few public libraries have complied in re-cataloging a book but, ultimately, after evaluating the book's content no changes were made.
+
+The focus of this paper will be on children-young-adult books (separated as "children" (2-10 years-old), "middle" (11-13 years-old), and "young-adult" (14-17 years-old)) that have been challenged in the United States from the years 2010-2019.  The paper will discuss the changing trends of challenged children-young-adult books throughout the years and provide some information about the kind of books being challenged. Therefore, the data is important because it illustrates the avoidance of discussion 2-17 year-olds could be enlightened to situations they could potentially face.
+
+Note: The books should not be confused with adult books taught in middle or high school classes, such as *The Great Gatsby*, *Beloved*, etc.
+
+
+# Research Questions
+
+1. Does the amount of books, per reason, change over time?
+1. Which age group had the most books challenged? Is it consistent throughout the decade?
+
+
+# Methods
+
+In order to answer the above questions I had to gather quantitative data. This data was obtained and modified from reports on the [Illinois Library Association (ILA) page](https://www.ila.org/initiatives/banned-books-week/archived-editions). PDFs of 2016-2018 can be found at the [American Library Association (ALA) page](http://www.ala.org/advocacy/bbooks/frequentlychallengedbooks), and 2019 pdf can be found at [The University of Toledo](https://www.utoledo.edu/commissions/banned-books/docs/ALAFieldReport2019.pdf).
+
+## Data 
+
+The following variables were used in the data: `r colnames(challenged_books)` for `r nrow(challenged_books)` children-young-adult titles.
+
+```{r}
+glimpse(challenged_books)
+```
+
+The reasons the books were challenged are categorized as one or more of the following: *bad influence* (encourages bad behavior), *drugs/alcohol* (involves or mentions drugs/alcohol), *LGBTQIA+* (characters identify as non-cishet), *offensive language* (curse words and other “inappropriate” words), *political/religious viewpoint* (the book or person challenging the book presents a political/religious view), *racism* (explicit or implicit racist attitudes/characters/words or stereotyped characters), *sexual content* (explicit or implicit sexual acts/descriptions/discussions. Combined with sex education books), *unsuitable for age group* (subjects being appropriate for older ages or book was placed in younger area. Also acts as “other” category: dark themes, occult,  reason N/A, etc.), and lastly *violence* (fighting, war, guns discussed/seen)
+
+
+# Results
+
+The research questions above deal with the variables *Year*, *Reason*, and *Audience* in order to see if there is a trend based off changes in the amount of books across the years.
+
+Going straight to the heart of the matter, I am interested in the reasons books are being challenged. To be more specific, the first research question (i.e. *Does the amount of books, per reason, change over time?*) requires us to see any shifts between *Reason* and *Year* by the number of books.
+
+
+```{r fig.dim=c(10,7)}
+# draw scatter plot of the amount of books per Reason per Year
+challenged_books %>% 
+  separate_rows(6, sep = ", ") %>%
+  mutate(Reason = ifelse(Reason == "Occult",
+                         "Unsuitable for age group", Reason)) %>% 
+  group_by(Year, Reason) %>% 
+  count(Reason) %>% 
+  ggplot(aes(x = Year,
+             y = n,
+             color = Reason)) +
+  scale_x_continuous(breaks = seq(2010, 2020, by = 1)) +
+  geom_point() +
+  geom_line() +
+  geom_label(aes(label = n)) +
+  facet_wrap(~Reason) +
+  theme(legend.position = "none") +
+  labs(x = "Years",
+       y = "Number of Books",
+       title = "Total Books Challenged by Reason Throughout the Decade",
+       caption = "*Note: the plot reflects some titles being in more than one categorical reason")
+```
+
+The scatter plot shows that the amount of books based off their reason for being challenged does change per year. However, notice that with increases there is a relative decrease in the other genres, which is especially noticeable in the last few years for LGBTQIA+, Bad Influence, and Unsuitable for Age Group. This can infer two scenarios: 1. more books are being published that concern those reasons; or 2. some reasons are more upsetting to (mostly) adults than the others as time goes by.
+
+To look deeper into this scatter plot and my interest in the reasons, the bar graph below splits the amount of books per reason into their respective target audience and shows the top reason those books are challenged.
+
+
+```{r fig.dim=c(8,7)}
+challenged_books %>% 
+  separate_rows(6, sep = ", ") %>% 
+  mutate(Reason = ifelse(Reason == "Occult",
+                         "Unsuitable for age group", Reason)) %>% 
+  group_by(Audience, Reason) %>%
+  count(Reason) %>%
+  ggplot(aes(y = reorder_within(Reason, n, Audience),
+             x = n,
+             fill = Reason)) +
+  geom_col() +
+  theme(legend.position = "none") +
+  geom_label(aes(label = n)) +
+  facet_wrap(~Audience, scales = "free_y", ncol = 1) +
+  labs(x = "Total Amount of Books", 
+       y = "Reasons",
+       title = "Each Age Group's Top Reason for Being Challenged",
+       caption = "*Note: the graph reflects some titles being in more than one categorical reason") +
+  scale_y_reordered()
+```
+
+From the graph, of most concern for children is LGBTQIA+ content, middle is Unsuitable for age group (which I can say is mostly due to content being deemed for high schoolers), and Sexual content for young-adults/teens. It can be assumed that the majority of books in the *LGBTQIA+* category are from children books and a majority of the books in the *Sexual content* category are from young-adult books. *Unsuitable for age group* remains a combination of all three but with young-adult books dominating the amount instead of middle grade books.
+
+This transitions to part 1 of the second research question (i.e. *Which age group had the most books challenged?*). As for the answer, one can fathom from the graph above that young-adult books are the most challenged.
+
+The following table shows the total amount of books challenged in each age group from 2010-2019.
+
+```{r}
+challenged_books %>%
+  count(Audience) %>% 
+  arrange(-n) %>% 
+  kable(col.names = c("Age Group", "Total Number of Books"),
+        caption = "Total number of books per age group (2010-2019)",
+        padding =10)
+```
+
+Now that it is confirmed young-adult books are the most challenged, we can answer part 2 of the second question (i.e. *Is it consistent throughout the decade?*).
+
+
+```{r}
+challenged_books %>%
+  group_by(Year, Audience) %>% 
+  count(Audience) %>%
+  ggplot(aes(x = Year,
+             y = n,
+             fill = Audience)) +
+  scale_x_continuous(breaks = seq(2010, 2020, by = 1)) +
+  geom_col(position = "dodge") +
+  labs(y = "Total Amount of Books",
+       title = "Most Challenged Books Based off Audience Throughout the Decade") +
+  scale_fill_manual(values = c("darkturquoise", "darkorchid", "deeppink3"))
+```
+
+The bar graph shows that young-adult books have been consistently the most challenged (as well as children books being the second most challenged) up until 2019, where children books surpass young-adult books. From the data set, I can state that it is due to a rise in censoring diverse books (i.e. LGBTQIA+) at an Ohio elementary school's book fair.
+
+
+# Conclusion
+
+A lot more content is being written to introduce subjects to younger readers in order to help them understand concepts/issues/situations, open discussions, challenge them, and much more. Thus, as more children-young-adult books are published with content reflecting contemporary issues and including more representation, those same books are being challenged. Additionally, older books that include similar subject matters are being challenged at the same time.
+
+This paper sought to answer the following questions:
+
+1. Does the amount of books, per reason, change over time?
+1. Which age group had the most books challenged? Is it consistent throughout the decade?
+
+There has been a general increase in total books challenged within some categorical reasons and per audience group. Shifts have been most apparent in recent years where some reasons are being reported more than others either by being more of a concern or more books are being published that fall into those reasons (or a combination of both). Furthermore, there has been a recent increase in trying to restrict children books from being taught or available, which has surpassed young-adult books dominance in being the most challenged.
+
+As a last remark, people need to remember that books are a way to help educate and prepare children of all ages in realistic situations and to normalize differences. It is important to not try to suppress a child's learning opportunity.
+
+
+
+
